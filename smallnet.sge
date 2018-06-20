@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -N smallnet                                                                  # change when swapping between deployed and development folders
-#$ -wd /net/home/student/b/bhenne/ba/networks/smallnet/                           # change when swapping between deployed and development folders
+#$ -N smallnet
+#$ -wd /net/home/student/b/bhenne/ba/networks/smallnet/
 #$ -cwd
 #$ -l mem=6G
 #$ -l mem_free=6G
@@ -13,7 +13,7 @@
 #$ -p 0
 #$ -cwd
 #$ -j y
-#$ -o /net/home/student/b/bhenne/ba/networks/smallnet/out_files/         # change when swapping between deployed and development folders
+#$ -o /net/home/student/b/bhenne/ba/networks/smallnet/out_files/
 #$ -m e
 
 # write header for return files
@@ -32,7 +32,7 @@ export CUDNN_HOME=/net/home/student/b/bhenne/ba/dependencies/cuda/
 export DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH:$CUDNN_HOME/lib64"
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$CUDNN_HOME/lib64"
 
-python3 /net/home/student/b/bhenne/ba/networks/smallnet/src/main.py $SGE_TASK_ID
+python3 /net/home/student/b/bhenne/ba/networks/smallnet/src/main.py
 deactivate
 
 # write footer for return files
