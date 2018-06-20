@@ -10,13 +10,13 @@ def train(run, settings):
     print("#     Build Network    #")
     print("########################")
     loader = settings.loader
-    summary_writer = tf.summary.FileWriter(settings.summary_path + str(run))
     network = net.Smallnet(settings)
 
     print("########################")
     print("#       Training       #")
     print("########################")
     with tf.Session() as session:
+        summary_writer = tf.summary.FileWriter(settings.summary_path + str(run), session.graph)
         saver = tf.train.Saver()
 
         # check if run already exits: if so continue run
