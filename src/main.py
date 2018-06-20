@@ -17,10 +17,10 @@ def train(run, settings):
     print("########################")
     with tf.Session() as session:
         summary_writer = tf.summary.FileWriter(settings.summary_path + str(run), session.graph)
-        saver = tf.train.Saver()
+        saver = tf.train.Saver(max_to_keep=10000)
 
         # check if run already exits: if so continue run
-        if os.path.isdir("stored_weights/"+str(run)):
+        if os.path.isdir("./stored_weights/"+str(run)):
             print("[Info] Stored weights for run detected.")
             print("[Info] Loading weights...")
             saver.restore(session, tf.train.latest_checkpoint('./stored_weights/'+str(run)))
@@ -64,7 +64,7 @@ def train(run, settings):
                     network.learning_rate: 0.001})
 
             # Save model
-            saver.save(session, "./stored_weights/"+str(run)+"/stored", _global_step)
+            saver.save(session, os.path.join("./stored_weights", str(run), "small_weights"), global_step=_global_step)
 
             #Printing Information
             t = time.time() - t
