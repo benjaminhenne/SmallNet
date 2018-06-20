@@ -29,8 +29,8 @@ def train(run, settings):
 
         # Initialize the global_step tensor
         tf.train.global_step(session, network.global_step)
-        print(" Epoch | Val Acc | Avg Tr Acc | Avg. Loss | Avg. CrossEntropy | Avg. L1 Penalty |  Time")
-        print("-------+---------+------------+-----------+-------------------+-----------------+--------")
+        print(" Epoch | Val Acc | Avg Tr Acc | Avg. Loss | Avg. CrossEntropy | Avg. L1 Penalty | Time")
+        print("-------+---------+------------+-----------+-------------------+-----------------+------------")
         for epoch in range(settings.epochs):
             t = time.time()
 
@@ -76,8 +76,9 @@ def train(run, settings):
             avg_cross_entropy = np.average(cross_entropies)
             avg_tr_acc = np.average(accuracies)
             #print(" Epoch | Val Acc | Avg TrAcc | Avg. CrossEntropy | Avg. L1 Penalty")
-            print(" #{0: 3d}  | {1: .3f}  |  {2: .3f}   |  {3: .3f}   |      {4: .3f}       |     {5: .3f}      | {6: .0f}m{7: .2f}s".format(epoch + 1, val_acc, avg_tr_acc, avg_loss, avg_cross_entropy, avg_penalty, minutes, seconds))
-            print("-------+---------+-----------+-----------+-------------------+-----------------+--------")
+            print(" #{0:3d}  | {1:^7.3f} | {2:^10.3f} | {3:^9.3f} | {4:^17.3f} | {5:^15.3f} | {6:^3.0f}m {7:^4.2f}s".format(
+                epoch + 1, val_acc, avg_tr_acc, avg_loss, avg_cross_entropy, avg_penalty, minutes, seconds))
+            print("-------+---------+------------+-----------+-------------------+-----------------+------------")
 
 def extract_number(f):
     s = re.findall(r"\d+$",f)
