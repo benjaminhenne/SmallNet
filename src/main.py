@@ -64,7 +64,9 @@ def train(run, settings):
                     network.learning_rate: 0.001})
 
             # Save model
-            saver.save(session, os.path.join("./stored_weights", str(run), "small_weights"), global_step=_global_step)
+            store_path = os.path.join("./stored_weights", str(run))
+            os.makedirs(store_path, exist_ok=True)
+            saver.save(session, os.path.join(store_path, "small_weights"), global_step=_global_step)
 
             #Printing Information
             t = time.time() - t
