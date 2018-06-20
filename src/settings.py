@@ -17,12 +17,8 @@ class Settings:
         self.dropout_rate = 0.5
         self.verbose_summaries = False
 
-<<<<<<< HEAD
         self.dataset_path = '/net/home/student/b/bhenne/ba/networks/datasets/cifar-10/'
-=======
-        #self.dataset_path = '/net/home/student/b/bhenne/ba/networks/datasets/cifar-10/'
-        self.dataset_path = 'C:/Code/CIFAR-10'
->>>>>>> 84b7b7efdd29cc72316b9cddd9add5e179f4fc7e
+        #self.dataset_path = 'C:/Code/CIFAR-10'
         self.summary_path = './summaries/'
         self.loader = loader.CIFAR(self.dataset_path)
         self.activations = [tf.nn.relu, tf.nn.elu, tf.nn.tanh, swish, identity]
