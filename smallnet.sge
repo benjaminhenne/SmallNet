@@ -2,8 +2,8 @@
 #$ -N smallnet
 #$ -wd /net/home/student/b/bhenne/ba/networks/smallnet/
 #$ -cwd
-#$ -l mem=6G
-#$ -l mem_free=6G
+#$ -l mem=4G
+#$ -l mem_free=4G
 #$ -l nv_mem_free=2900M
 #$ -l ubuntu_version=xenial
 #$ -l cuda=1
