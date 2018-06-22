@@ -2,6 +2,7 @@
 # network output directories
 summaries/
 out_files/
+stored_weights/
 
 =======
 >>>>>>> 84b7b7efdd29cc72316b9cddd9add5e179f4fc7e
