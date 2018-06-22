@@ -71,7 +71,7 @@ def train(run, settings):
                     network.learning_rate: 0.001})
 
             # Save model
-            store_path = os.path.join("./stored_weights", str(run))
+            store_path = os.path.join(settings.storage_path, str(run))
             os.makedirs(store_path, exist_ok=True)
             saver.save(session, os.path.join(store_path, "small_weights"), global_step=_global_step)
 
