@@ -40,6 +40,9 @@ def train(run, settings):
             cross_entropies = []
             accuracies = []
             for train_inputs, train_labels in loader.get_training_batch(settings.batch_size):
+                global_step = tf.train.global_step(session, network.global_step)
+                run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE) if global_step % 50 == 0 else None
+                run_metadata = tf.RunMetadata() if global_step % 50 == 0 else None
                 _global_step, _xentropy, _penalty, _logits, _summaries, _, _loss, _accuracy = session.run(
                     [network.global_step, network.xentropy, network.penalty, network.logits, network.summaries,
                     network.update, network.loss, network.accuracy],
@@ -47,13 +50,17 @@ def train(run, settings):
                         network.inputs:train_inputs,
                         network.labels:train_labels,
                         network.learning_rate: settings.l_rate
-                })
+                        },
+                        options=run_options,
+                        run_metadata=run_metadata)
                 losses.append(_loss)
                 penalties.append(_penalty)
                 cross_entropies.append(_xentropy)
                 accuracies.append(_accuracy)
                 # write summaries
-                summary_writer.add_summary(_summaries, tf.train.global_step(session, network.global_step))
+                if global_step % 50 == 0:
+                    summary_writer.add_run_metadata(run_metadata, 'step%d' % global_step)
+                summary_writer.add_summary(_summaries, global_step)
 
             # validation
             val_inputs, val_labels = next(loader.get_validation_batch(0))
