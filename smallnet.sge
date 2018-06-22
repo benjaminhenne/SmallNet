@@ -11,10 +11,10 @@
 #$ -l cuda_driver=8000.000000
 #$ -l cuda_cores=3000
 #$ -p 0
-#$ -cwd
 #$ -j y
 #$ -o /net/home/student/b/bhenne/ba/networks/smallnet/out_files/
 #$ -m e
+#$ -cwd
 
 # write header for return files
 echo "*** Start of job ***"
@@ -32,7 +32,7 @@ export CUDNN_HOME=/net/home/student/b/bhenne/ba/dependencies/cuda/
 export DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH:$CUDNN_HOME/lib64"
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$CUDNN_HOME/lib64"
 
-python3 /net/home/student/b/bhenne/ba/networks/smallnet/src/main.py
+python3 /net/home/student/b/bhenne/ba/networks/smallnet/src/main.py $JOB_ID
 deactivate
 
 # write footer for return files
