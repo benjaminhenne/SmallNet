@@ -116,11 +116,11 @@ class Smallnet(object):
 				bias_shape = [weights_shape[-1]]
 
 			weight_init = tf.truncated_normal_initializer(stddev=tf.sqrt(2./(weights_shape[0] * weights_shape[1] * weights_shape[2])))
-			weights	= tf.get_variable('weights', weights_shape, initializer=weight_init)
-			biases = tf.get_variable('biases', bias_shape, initializer=tf.constant_initializer(bias_init))
+			weights	= tf.get_variable('layer_weights', weights_shape, initializer=weight_init)
+			biases = tf.get_variable('layer_biases', bias_shape, initializer=tf.constant_initializer(bias_init))
 			layer = tf.nn.conv2d(layer_input, weights, stride, padding)
-			self.add_summaries(weights, 'weights')
-			self.add_summaries(biases, 'biases')
+			self.add_summaries(weights, 'layer_weights')
+			self.add_summaries(biases, 'layer_biases')
 			if bias_shape != [0]: # manually add biases now before we mess with activations
 				layer += biases
 			return self.add_activations(layer)
@@ -136,10 +136,10 @@ class Smallnet(object):
 				bias_shape = [weights_shape[-1]]
 
 			weights_shape = [dims, weights_shape[0]]
-			weights = tf.get_variable('weights', weights_shape, initializer=tf.truncated_normal_initializer(stddev=tf.sqrt(2./(weights_shape[0] * weights_shape[1]))))
-			biases = tf.get_variable('biases', bias_shape, initializer=tf.constant_initializer(bias_init))
-			self.add_summaries(weights, 'weights')
-			self.add_summaries(biases, 'biases')
+			weights = tf.get_variable('layer_weights', weights_shape, initializer=tf.truncated_normal_initializer(stddev=tf.sqrt(2./(weights_shape[0] * weights_shape[1]))))
+			biases = tf.get_variable('layer_biases', bias_shape, initializer=tf.constant_initializer(bias_init))
+			self.add_summaries(weights, 'layer_weights')
+			self.add_summaries(biases, 'layer_biases')
 			layer = tf.matmul(flat_layer_input, weights)
 			if bias_shape != [0]: # manually add biases now before we mess with activations
 				layer += biases
@@ -156,11 +156,11 @@ class Smallnet(object):
 				# TODO correct shapes for weights; do we even need biases?; optimal init values?
 				weights = tf.get_variable('activation_weights', shape=[], initializer=tf.truncated_normal_initializer(
 					stddev=self.settings.act_inits[i](dims)))
-				self.add_summaries(weights, 'weights')
+				self.add_summaries(weights, 'activation_weights')
 				# swish and identity don't want to behave like API activation functions, so they get special treatment
 				if self.settings.activations[i].__name__ == 'swish':
-					beta = tf.get_variable('swish_beta', initializer=self.settings.act_inits[i](layer))
-					self.add_summaries(beta, 'swish_beta')
+					beta = tf.get_variable('act_swish_beta', initializer=self.settings.act_inits[i](layer))
+					self.add_summaries(beta, 'act_swish_beta')
 					act = self.settings.activations[i]()
 					out_list.append(act(layer, beta) * weights)
 				elif self.settings.activations[i].__name__ == 'identity':
