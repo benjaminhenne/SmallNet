@@ -6,16 +6,18 @@ import tensorflow as tf
 class Settings:
     def __init__(self):
         # hyperparameters
-        self.epochs = 50
+        self.epochs = 1000
         self.batch_size = 256
         self.logit_dim = 10
         self.l_rate = 5e-4
-        self.l1_regularize = False
+        self.l1_regularize = True
         self.l1_scale = 0.8
         self.l2_regularize = False
         self.l2_lambda = 0.01
         self.dropout_rate = 0.5
         self.verbose_summaries = False
+        self.keep_weights_every_n = 10
+        self.summary_after_n_steps = 50
 
         self.dataset_path = '/net/store/ni/projects/l1activations/datasets/cifar-10/'
         #self.dataset_path = 'C:/Code/CIFAR-10'
@@ -32,3 +34,17 @@ class Settings:
         self.network_layout = 'default'
         #self.optimiser = tf.train.AdamOptimizer()
         self.optimiser = 'Adam'
+
+    def print_settings(self):
+        print('Epochs: \t\t{}'.format(self.epochs))
+        print('Batch size: \t\t{}'.format(self.batch_size))
+        print('Learning rate: \t\t{}'.format(self.l_rate))
+        print('L1 yes/no: \t\t{}'.format(self.l1_regularize))
+        print('L1 scale: \t\t{}'.format(self.l1_scale))
+        print('L2 yes/no: \t\t{}'.format(self.l2_regularize))
+        print('L2 lambda: \t\t{}'.format(self.l2_lambda))
+        print('Dropout rate: \t\t{}'.format(self.dropout_rate))
+        print('Verbosity: \t\t{}'.format(self.verbose_summaries))
+        print('Activations: \t\t{}'.format([a for a in self.activations]))
+        print('Network layout: \t\t{}'.format(self.network_layout))
+        print('Optimiser: \t\t{}'.format(self.optimiser))

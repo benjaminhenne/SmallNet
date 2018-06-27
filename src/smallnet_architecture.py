@@ -29,7 +29,7 @@ class Smallnet(object):
 
 			elif self.settings.l1_regularize:
 				# collect all activation weights
-				weight_sets = [[var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) if l+'/activation_weights' in var.name] for l in layer_names]
+				weight_sets = [[var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) if l in var.name and '/activation_weights' in var.name] for l in layer_names]
 				# init l1 regulariser and apply regularisation to collected weights
 				l1_reg = tf.contrib.layers.l1_regularizer(scale=self.settings.l1_scale, scope="l1_regularisation")
 				penalties = [tf.contrib.layers.apply_regularization(l1_reg, weight) for weight in weight_sets]

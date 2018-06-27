@@ -9,6 +9,7 @@ def train(run, settings):
     print("########################")
     print("#     Build Network    #")
     print("########################")
+    settings.print_settings()
     loader = settings.loader
     network = net.Smallnet(settings)
 
@@ -16,7 +17,8 @@ def train(run, settings):
     print("#       Training       #")
     print("########################")
     with tf.Session() as session:
-        summary_writer = tf.summary.FileWriter(settings.summary_path + str(run), session.graph)
+        summary_path = os.path.join(settings.summary_path, (str(run) + '-' + str(settings.epochs)))
+        summary_writer = tf.summary.FileWriter(summary_path, session.graph)
         saver = tf.train.Saver(max_to_keep=10000)
 
         # check if run already exits: if so continue run
@@ -41,8 +43,8 @@ def train(run, settings):
             accuracies = []
             for train_inputs, train_labels in loader.get_training_batch(settings.batch_size):
                 global_step = tf.train.global_step(session, network.global_step)
-                run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE) if global_step % 50 == 0 else None
-                run_metadata = tf.RunMetadata() if global_step % 50 == 0 else None
+                run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE) if global_step % settings.summary_after_n_steps == 0 else None
+                run_metadata = tf.RunMetadata() if global_step % settings.summary_after_n_steps == 0 else None
                 _global_step, _xentropy, _penalty, _logits, _summaries, _, _loss, _accuracy = session.run(
                     [network.global_step, network.xentropy, network.penalty, network.logits, network.summaries,
                     network.update, network.loss, network.accuracy],
@@ -58,7 +60,7 @@ def train(run, settings):
                 cross_entropies.append(_xentropy)
                 accuracies.append(_accuracy)
                 # write summaries
-                if global_step % 50 == 0:
+                if global_step % settings.summary_after_n_steps == 0:
                     summary_writer.add_run_metadata(run_metadata, 'step%d' % global_step)
                 summary_writer.add_summary(_summaries, global_step)
 
@@ -71,9 +73,10 @@ def train(run, settings):
                     network.learning_rate: 0.001})
 
             # Save model
-            store_path = os.path.join(settings.storage_path, str(run))
-            os.makedirs(store_path, exist_ok=True)
-            saver.save(session, os.path.join(store_path, "small_weights"), global_step=_global_step)
+            if epoch % settings.keep_weights_every_n == 0 or epoch == (settings.epochs-1):
+                store_path = os.path.join(settings.storage_path, str(run))
+                os.makedirs(store_path, exist_ok=True)
+                saver.save(session, os.path.join(store_path, "small_weights"), global_step=_global_step)
 
             #Printing Information
             t = time.time() - t
