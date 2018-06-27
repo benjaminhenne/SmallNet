@@ -6,7 +6,7 @@ import tensorflow as tf
 class Settings:
     def __init__(self):
         # hyperparameters
-        self.epochs = 1000
+        self.epochs = 500
         self.batch_size = 256
         self.logit_dim = 10
         self.l_rate = 5e-4

@@ -66,11 +66,12 @@ def train(run, settings):
 
             # validation
             val_inputs, val_labels = next(loader.get_validation_batch(0))
-            val_acc, _ = session.run([network.accuracy, network.loss],
+            val_acc, _val_sum, _ = session.run([network.accuracy, network.validation_summaries, network.loss],
                 feed_dict={
                     network.inputs:val_inputs,
                     network.labels:val_labels,
                     network.learning_rate: 0.001})
+            summary_writer.add_summary(_val_sum, global_step)
 
             # Save model
             if epoch % settings.keep_weights_every_n == 0 or epoch == (settings.epochs-1):
