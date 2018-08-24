@@ -19,8 +19,9 @@ class Settings:
         self.keep_weights_every_n = 10
         self.summary_after_n_steps = 50
 
-        self.dataset_path = '/net/store/ni/projects/l1activations/datasets/cifar-10/'
-        #self.dataset_path = 'C:/Code/CIFAR-10'
+        self.dataset_path = '/gpfs/homea/hos00/hos002/datasets/cifar-10/'
+        #self.dataset_path = '/net/store/ni/projects/l1activations/datasets/cifar-10/'
+	#self.dataset_path = 'C:/Code/CIFAR-10'
         self.summary_path = './summaries/'
         self.storage_path = './stored_weights'
         self.loader = loader.CIFAR(self.dataset_path)
