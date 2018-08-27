@@ -6,12 +6,12 @@ import tensorflow as tf
 class Settings:
     def __init__(self):
         # hyperparameters
-        self.epochs = 500
+        self.epochs = 350
         self.batch_size = 256
         self.logit_dim = 10
         self.l_rate = 5e-4
         self.l1_regularize = True
-        self.l1_scale = 0.8
+        self.l1_scale = 0.01
         self.l2_regularize = False
         self.l2_lambda = 0.01
         self.dropout_rate = 0.5
