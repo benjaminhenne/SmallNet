@@ -1,14 +1,17 @@
 import tensorflow as tf
 
 class Smallnet(object):
-	def __init__(self, settings):
+	def __init__(self, settings, features, labels, hparams):
 		self.settings = settings
 
 		# inputs
 		with tf.name_scope('inputs'):
-			self.inputs = tf.placeholder(tf.float32, [None, 32,32,3], name='inputs')
-			self.labels = tf.placeholder(tf.int64, [None], name='labels')
-			self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
+			#self.inputs = tf.placeholder(tf.float32, [None, 32,32,3], name='inputs')
+			# self.labels = tf.placeholder(tf.int64, [None], name='labels')
+			#self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
+			self.inputs = features
+			self.labels = labels
+			self.learning_rate = hparams.learning_rate
 			self.global_step = tf.Variable(0, trainable=False, name='global_step')
 
 		if self.settings.network_layout == 'default':
