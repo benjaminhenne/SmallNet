@@ -65,7 +65,8 @@ class Smallnet(object):
 			self.minimize = self.optimizer.minimize(self.loss)
 			varlist = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)]
 			self.gradients = self.optimizer.compute_gradients(self.loss, var_list=varlist)
-			self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=self.global_step)
+			#self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=self.global_step)
+			self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=tf.train.get_global_step())
 
 		sums = 		[s for s in tf.get_collection(tf.GraphKeys.SUMMARIES) if 'validation' not in s.name]
 		val_sums =	[s for s in tf.get_collection(tf.GraphKeys.SUMMARIES) if 'validation' in s.name]
@@ -127,8 +128,8 @@ class Smallnet(object):
 			weights	= tf.get_variable('layer_weights', weights_shape, initializer=weight_init)
 			biases = tf.get_variable('layer_biases', bias_shape, initializer=tf.constant_initializer(bias_init))
 			layer = tf.nn.conv2d(layer_input, weights, stride, padding)
-			self.add_summaries(weights, 'layer_weights')
-			self.add_summaries(biases, 'layer_biases')
+			#self.add_summaries(weights, 'layer_weights')
+			#self.add_summaries(biases, 'layer_biases')
 			if bias_shape != [0]: # manually add biases now before we mess with activations
 				layer += biases
 			return self.add_activations(layer)
@@ -146,8 +147,8 @@ class Smallnet(object):
 			weights_shape = [dims, weights_shape[0]]
 			weights = tf.get_variable('layer_weights', weights_shape, initializer=tf.truncated_normal_initializer(stddev=tf.sqrt(2./(weights_shape[0] * weights_shape[1]))))
 			biases = tf.get_variable('layer_biases', bias_shape, initializer=tf.constant_initializer(bias_init))
-			self.add_summaries(weights, 'layer_weights')
-			self.add_summaries(biases, 'layer_biases')
+			#self.add_summaries(weights, 'layer_weights')
+			#self.add_summaries(biases, 'layer_biases')
 			layer = tf.matmul(flat_layer_input, weights)
 			if bias_shape != [0]: # manually add biases now before we mess with activations
 				layer += biases
@@ -168,7 +169,7 @@ class Smallnet(object):
 				# swish and identity don't want to behave like API activation functions, so they get special treatment
 				if self.settings.activations[i].__name__ == 'swish':
 					beta = tf.get_variable('act_swish_beta', initializer=self.settings.act_inits[i](layer))
-					self.add_summaries(beta, 'act_swish_beta')
+					#self.add_summaries(beta, 'act_swish_beta')
 					act = self.settings.activations[i]()
 					out_list.append(act(layer, beta) * weights)
 				elif self.settings.activations[i].__name__ == 'identity':

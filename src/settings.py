@@ -23,7 +23,7 @@ class Settings:
         #self.dataset_path = 'C:/Code/CIFAR-10'
         self.summary_path = './summaries/'
         self.storage_path = './stored_weights'
-        self.loader = loader.CIFAR(self.dataset_path)
+        #self.loader = loader.CIFAR(self.dataset_path)
         self.activations = [tf.nn.relu, tf.nn.elu, tf.nn.tanh, swish, identity]
         #self.act_inits = [lambda fan_in: 2.0/fan_in[2] if len(fan_in) == 4 else 2.0/fan_in[1], # relu
         #                  lambda fan_in: 0.1, # elu
