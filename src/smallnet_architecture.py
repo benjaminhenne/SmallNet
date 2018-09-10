@@ -1,14 +1,17 @@
 import tensorflow as tf
 
 class Smallnet(object):
-	def __init__(self, settings):
+	def __init__(self, settings, features, labels, hparams):
 		self.settings = settings
-
+		self.hparams = hparams
 		# inputs
 		with tf.name_scope('inputs'):
-			self.inputs = tf.placeholder(tf.float32, [None, 32,32,3], name='inputs')
-			self.labels = tf.placeholder(tf.int64, [None], name='labels')
-			self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
+			#self.inputs = tf.placeholder(tf.float32, [None, 32,32,3], name='inputs')
+			# self.labels = tf.placeholder(tf.int64, [None], name='labels')
+			#self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
+			self.inputs = features
+			self.labels = labels
+			self.learning_rate = hparams.learning_rate
 			self.global_step = tf.Variable(0, trainable=False, name='global_step')
 
 		if self.settings.network_layout == 'default':
@@ -21,7 +24,7 @@ class Smallnet(object):
 		# objective
 		self.penalty = tf.constant(0)
 		with tf.name_scope('objective'):
-			# cross entroy
+			# cross entropy
 			self.xentropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits, labels=self.labels))
 
 			if self.settings.l1_regularize and self.settings.l2_regularize:
@@ -62,7 +65,8 @@ class Smallnet(object):
 			self.minimize = self.optimizer.minimize(self.loss)
 			varlist = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)]
 			self.gradients = self.optimizer.compute_gradients(self.loss, var_list=varlist)
-			self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=self.global_step)
+			#self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=self.global_step)
+			self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=tf.train.get_global_step())
 
 		sums = 		[s for s in tf.get_collection(tf.GraphKeys.SUMMARIES) if 'validation' not in s.name]
 		val_sums =	[s for s in tf.get_collection(tf.GraphKeys.SUMMARIES) if 'validation' in s.name]
@@ -109,7 +113,7 @@ class Smallnet(object):
 		state	= tf.nn.dropout(state, keep_prob=self.settings.dropout_rate, name='dropout03')
 		state 	= self.dense_multiple_act(state, weights_shape=[192], bias_shape=[-1], bias_init=0.1, scope_name='dense02')
 		# output layer
-		logits = self.dense_multiple_act(state, weights_shape=[10], bias_shape=[-1], bias_init=0.1, logits=True, scope_name='output01')
+		logits = self.dense_multiple_act(state, weights_shape=[self.hparams.logit_dims], bias_shape=[-1], bias_init=0.1, logits=True, scope_name='output01')
 		return logits, ['conv01', 'conv02', 'conv03', 'conv04', 'dense01', 'dense02']
 
 
@@ -124,8 +128,8 @@ class Smallnet(object):
 			weights	= tf.get_variable('layer_weights', weights_shape, initializer=weight_init)
 			biases = tf.get_variable('layer_biases', bias_shape, initializer=tf.constant_initializer(bias_init))
 			layer = tf.nn.conv2d(layer_input, weights, stride, padding)
-			self.add_summaries(weights, 'layer_weights')
-			self.add_summaries(biases, 'layer_biases')
+			#self.add_summaries(weights, 'layer_weights')
+			#self.add_summaries(biases, 'layer_biases')
 			if bias_shape != [0]: # manually add biases now before we mess with activations
 				layer += biases
 			return self.add_activations(layer)
@@ -143,8 +147,8 @@ class Smallnet(object):
 			weights_shape = [dims, weights_shape[0]]
 			weights = tf.get_variable('layer_weights', weights_shape, initializer=tf.truncated_normal_initializer(stddev=tf.sqrt(2./(weights_shape[0] * weights_shape[1]))))
 			biases = tf.get_variable('layer_biases', bias_shape, initializer=tf.constant_initializer(bias_init))
-			self.add_summaries(weights, 'layer_weights')
-			self.add_summaries(biases, 'layer_biases')
+			#self.add_summaries(weights, 'layer_weights')
+			#self.add_summaries(biases, 'layer_biases')
 			layer = tf.matmul(flat_layer_input, weights)
 			if bias_shape != [0]: # manually add biases now before we mess with activations
 				layer += biases
@@ -165,7 +169,7 @@ class Smallnet(object):
 				# swish and identity don't want to behave like API activation functions, so they get special treatment
 				if self.settings.activations[i].__name__ == 'swish':
 					beta = tf.get_variable('act_swish_beta', initializer=self.settings.act_inits[i](layer))
-					self.add_summaries(beta, 'act_swish_beta')
+					#self.add_summaries(beta, 'act_swish_beta')
 					act = self.settings.activations[i]()
 					out_list.append(act(layer, beta) * weights)
 				elif self.settings.activations[i].__name__ == 'identity':
