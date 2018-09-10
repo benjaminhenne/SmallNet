@@ -49,9 +49,9 @@ def get_input_fn(mode=None, params=None):
             if mode == 'train':
                 dataset = DataHandler(mode, "train*.tfre*", params).prepare_for_train()
             elif mode == 'eval':
-                dataset = DataHandler(mode, "eval*.tfre*", params).prepare_for_eval(params.batch_size)
+                dataset = DataHandler(mode, "eval*.tfre*", params).prepare_for_eval(params.eval_batch_size)
             elif mode == 'test':
-                dataset = DataHandler(mode, "test*.tfre*", params).prepare_for_eval(params.batch_size)
+                dataset = DataHandler(mode, "test*.tfre*", params).prepare_for_eval(params.eval_batch_size)
             else:
                 raise ValueError('_input_fn received invalid MODE')
             return dataset.make_one_shot_iterator().get_next()
@@ -166,6 +166,12 @@ if __name__ == '__main__':
         default=128,
         help='Batch size.',
         dest='batch_size')
+    parser.add_argument(
+        '-e', '--eval-batch-size',
+        type=int,
+        default=128,
+        help="Evaluation batch size",
+        dest="eval_batch_size")
     parser.add_argument(
         '-l', '--learning-rate',
         type=float,
