@@ -1,29 +1,45 @@
 import tensorflow as tf
 import os
+import pickle
 
 def get_parse_fn(mode, params):
     """
-    Creates a parse function for dataset examples. Performs raw decoding, reshaping and casting on both train and eval
+    Creates a parse function for dataset examples. Performs decoding, reshaping and casting on both train and eval
     data, performs preprocessing on train data if turned on.
     """
     def _parse_fn(example):
-        # format of serialised examples in .tfrecords
-        example_fmt = {
-            'image': tf.FixedLenFeature((), tf.string, ""),
-            'label': tf.FixedLenFeature((), tf.int64, -1)
-        }
-        parsed = tf.parse_single_example(example, example_fmt)
-        
-        # decode raw tfrecords data and convert to uint8
-        image = tf.decode_raw(parsed["image"], tf.uint8)
-        
-        # reshape data into desired shape, then cast to desired output type
-        height, width, depth = params.data_dims
-        image.set_shape([height * width * depth])
-        image = tf.cast(tf.reshape(image, [height, width, depth]), tf.float32)
-        label = tf.cast(parsed['label'], tf.int64)
+        """
+        Method to parse dataset content. Decodes images, reshapes and casts them to float32, applies preprocessing
+        when necessary.
+        """
 
-        # perform preprocessing if turned on
+        """
+        Reads dataset information from pickle file. Contents:
+            'encoded':  True if dataset has been encoded, false if tf.decode_raw() is fine
+            'data':     Name of image data feature in format dict
+            'labels':   Name of label data feature in format dict
+            'hwd':      Array containing heigth, width and depth of encoded image data
+            'format':   Dictionary containing format of dataset to decode
+        """
+        with open(os.path.join(params.data_dir, 'content.pickle'), 'rb') as handle:
+            info = pickle.load(handle)
+
+        example_fmt = info['format']
+        parsed = tf.parse_single_example(example, example_fmt)
+
+        # decode data, dependant on encoding
+        if info['encoded']:
+            image = tf.image.decode_image(parsed[info['data']], channels=3, dtype=tf.float32)
+        else:
+            image = tf.cast(tf.decode_raw(parsed[info['data']], tf.uint8), tf.float32)
+
+        # reshape data into desired shape
+        height, width, depth = info['hwd']
+        image.set_shape([height * width * depth])
+        image = tf.reshape(image, [height, width, depth])
+        label = parsed[info['labels']]
+
+        # perform preprocessing if enabled
         if mode == 'train' and params.preprocess_data:
             zoom_factor = params.preprocess_zoom
             image = tf.image.resize_image_with_crop_or_pad(image, int(height*zoom_factor), int(width*zoom_factor))
