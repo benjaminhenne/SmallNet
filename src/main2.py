@@ -107,7 +107,7 @@ def main(**hparams):
 
         # compute final test performance
         classifier.evaluate(input_fn=get_input_fn(mode='test'), name='test')
-        
+
         tf.logging.info('Finished iteration {} of {}.'.format((i+1), hparams['repeats']))
 
 if __name__ == '__main__':
@@ -136,6 +136,12 @@ if __name__ == '__main__':
         default=1,
         help='Number of scheduled repeats this job should run for.',
         dest='repeats')
+    parser.add_argument(
+        '-d', '--logit-dimensions',
+        type=int,
+        required=True,
+        help='Dimension of network logits',
+        dest='logit_dims')
     parser.add_argument(
         '-n', '--num-gpus',
         type=int,

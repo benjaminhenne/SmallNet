@@ -3,7 +3,7 @@ import tensorflow as tf
 class Smallnet(object):
 	def __init__(self, settings, features, labels, hparams):
 		self.settings = settings
-
+		self.hparams = hparams
 		# inputs
 		with tf.name_scope('inputs'):
 			#self.inputs = tf.placeholder(tf.float32, [None, 32,32,3], name='inputs')
@@ -24,7 +24,7 @@ class Smallnet(object):
 		# objective
 		self.penalty = tf.constant(0)
 		with tf.name_scope('objective'):
-			# cross entroy
+			# cross entropy
 			self.xentropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits, labels=self.labels))
 
 			if self.settings.l1_regularize and self.settings.l2_regularize:
@@ -113,7 +113,7 @@ class Smallnet(object):
 		state	= tf.nn.dropout(state, keep_prob=self.settings.dropout_rate, name='dropout03')
 		state 	= self.dense_multiple_act(state, weights_shape=[192], bias_shape=[-1], bias_init=0.1, scope_name='dense02')
 		# output layer
-		logits = self.dense_multiple_act(state, weights_shape=[10], bias_shape=[-1], bias_init=0.1, logits=True, scope_name='output01')
+		logits = self.dense_multiple_act(state, weights_shape=[self.hparams.logit_dims], bias_shape=[-1], bias_init=0.1, logits=True, scope_name='output01')
 		return logits, ['conv01', 'conv02', 'conv03', 'conv04', 'dense01', 'dense02']
 
 
