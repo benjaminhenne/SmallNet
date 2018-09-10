@@ -1,113 +1,193 @@
+import argparse
+import os
+
 import tensorflow as tf
-import numpy as np
+
 from settings import Settings
+from DataHandler import DataHandler
 import smallnet_architecture as net
-import sys
-import os, time, re
 
-def train(run, settings):
-    print("########################")
-    print("#     Build Network    #")
-    print("########################")
-    settings.print_settings()
-    loader = settings.loader
-    network = net.Smallnet(settings)
+def get_model_fn():
+    """Creates a model function that builds the net and manages estimator specs."""
 
-    print("########################")
-    print("#       Training       #")
-    print("########################")
-    with tf.Session() as session:
-        summary_path = os.path.join(settings.summary_path, (str(run) + '-' + str(settings.epochs)))
-        summary_writer = tf.summary.FileWriter(summary_path, session.graph)
-        saver = tf.train.Saver(max_to_keep=10000)
+    def _small_net_model_fn(features, labels, mode, params):
+        """Builds the network model and prepares EstimatorSpecs for prediction, training and evaluation."""
+        
+        # individual model set-up
+        settings = Settings()
+        network = net.Smallnet(settings, features, labels, params)
+        logits = network.logits
 
-        # check if run already exits: if so continue run
-        if os.path.isdir("./stored_weights/"+str(run)):
-            print("[Info] Stored weights for run detected.")
-            print("[Info] Loading weights...")
-            saver.restore(session, tf.train.latest_checkpoint('./stored_weights/'+str(run)))
-        else:
-            session.run(tf.global_variables_initializer())
+        # prediction EstimatorSpec
+        predicted_classes = tf.argmax(logits, 1)
+        if mode == tf.estimator.ModeKeys.PREDICT:
+            predictions = {
+                'class': predicted_classes,
+                'prob': tf.nn.softmax(logits)
+            }
+            return tf.estimator.EstimatorSpec(mode, predictions=predictions)
 
-        # Initialize the global_step tensor
-        tf.train.global_step(session, network.global_step)
-        print(" Epoch | Val Acc | Avg Tr Acc | Avg. Loss | Avg. CrossEntropy | Avg. L1 Penalty | Time")
-        print("-------+---------+------------+-----------+-------------------+-----------------+------------")
-        for epoch in range(settings.epochs):
-            t = time.time()
+        # training EstimatorSpec
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            return tf.estimator.EstimatorSpec(mode, loss=network.xentropy, train_op=network.update)
 
-            ## Training
-            losses = []
-            penalties = []
-            cross_entropies = []
-            accuracies = []
-            for train_inputs, train_labels in loader.get_training_batch(settings.batch_size):
-                global_step = tf.train.global_step(session, network.global_step)
-                run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE) if global_step % settings.summary_after_n_steps == 0 else None
-                run_metadata = tf.RunMetadata() if global_step % settings.summary_after_n_steps == 0 else None
-                _global_step, _xentropy, _penalty, _logits, _summaries, _, _loss, _accuracy = session.run(
-                    [network.global_step, network.xentropy, network.penalty, network.logits, network.summaries,
-                    network.update, network.loss, network.accuracy],
-                    feed_dict={
-                        network.inputs:train_inputs,
-                        network.labels:train_labels,
-                        network.learning_rate: settings.l_rate
-                        },
-                        options=run_options,
-                        run_metadata=run_metadata)
-                losses.append(_loss)
-                penalties.append(_penalty)
-                cross_entropies.append(_xentropy)
-                accuracies.append(_accuracy)
-                # write summaries
-                if global_step % settings.summary_after_n_steps == 0:
-                    summary_writer.add_run_metadata(run_metadata, 'step%d' % global_step)
-                summary_writer.add_summary(_summaries, global_step)
+        # evaluation EstimatorSpec
+        eval_metric_ops = {
+            'accuracy': tf.metrics.accuracy(
+                labels=labels, predictions=predicted_classes)
+        }
+        return tf.estimator.EstimatorSpec(mode, loss=network.xentropy, eval_metric_ops=eval_metric_ops)
 
-            # validation
-            val_inputs, val_labels = next(loader.get_validation_batch(0))
-            val_acc, _val_sum, _ = session.run([network.accuracy, network.validation_summaries, network.loss],
-                feed_dict={
-                    network.inputs:val_inputs,
-                    network.labels:val_labels,
-                    network.learning_rate: 0.001})
-            summary_writer.add_summary(_val_sum, global_step)
+    return _small_net_model_fn
 
-            # Save model
-            if epoch % settings.keep_weights_every_n == 0 or epoch == (settings.epochs-1):
-                store_path = os.path.join(settings.storage_path, str(run))
-                os.makedirs(store_path, exist_ok=True)
-                saver.save(session, os.path.join(store_path, "small_weights"), global_step=_global_step)
+def get_input_fn(mode=None, params=None):
+    """Creates an input function that loads the dataset and prepares it for use."""
 
-            #Printing Information
-            t = time.time() - t
-            minutes, seconds = divmod(t, 60)
-            avg_loss = np.average(losses)
-            avg_penalty = np.average(penalties)
-            avg_cross_entropy = np.average(cross_entropies)
-            avg_tr_acc = np.average(accuracies)
-            #print(" Epoch | Val Acc | Avg TrAcc | Avg. CrossEntropy | Avg. L1 Penalty")
-            print(" #{0:3d}  | {1:^7.3f} | {2:^10.3f} | {3:^9.3f} | {4:^17.3f} | {5:^15.3f} | {6:^3.0f}m {7:^4.2f}s".format(
-                epoch + 1, val_acc, avg_tr_acc, avg_loss, avg_cross_entropy, avg_penalty, minutes, seconds))
-            print("-------+---------+------------+-----------+-------------------+-----------------+------------")
+    def _input_fn(mode=None, params=None):
+        """Loads the dataset, decodes, reshapes and preprocesses it for use. Computations performed on CPU."""
+        with tf.device('/cpu:0'):
+            if mode == 'train':
+                dataset = DataHandler(mode, "train.tfrecords", params).prepare_for_train()
+            elif mode == 'eval':
+                dataset = DataHandler(mode, "eval.tfrecords", params).prepare_for_eval(params.batch_size)
+            elif mode == 'test':
+                dataset = DataHandler(mode, "test.tfrecords", params).prepare_for_eval(params.batch_size)
+            else:
+                raise ValueError('_input_fn received invalid MODE')
+            return dataset.make_one_shot_iterator().get_next()
 
-def extract_number(f):
-    s = re.findall(r"\d+$",f)
-    return (int(s[0]) if s else -1,f)
+    return _input_fn
 
-def main(argv):
-    settings = Settings()
-    run = -1
-    if len(argv) == 0:
-        files = [d.name for d in os.scandir(settings.summary_path)]
-        run = str(int(max(files,key=extract_number)) + 1)
-    else:
-        run = argv[0]
-    if os.path.isdir(settings.summary_path + run):
-        print('[Attention] The specified run already exists!')
-        sys.exit()
+def build_estimator(run_config, hparams):
+    """Builds the estimator object and returns it."""
+    return tf.estimator.Estimator(model_fn=get_model_fn(),
+           config=run_config,
+           params=hparams)
 
-    train(run, settings)
+def main(**hparams):
 
-if __name__ == "__main__":
-   main(sys.argv[1:])
+    # Start tensorflow logging
+    tf.logging.set_verbosity(tf.logging.INFO)
+
+    session_config = tf.ConfigProto(
+        allow_soft_placement=True,
+        log_device_placement=False,
+        device_count={"CPU": hparams['num_cores'], "GPU": hparams['num_gpus']},
+        gpu_options=tf.GPUOptions(force_gpu_compatible=True)
+    )
+
+    # for-loop for batch jobs
+    for i in range(hparams['repeats']):
+        tf.logging.info('Commencing iteration {} of {}.'.format((i+1), hparams['repeats']))
+
+        config = tf.estimator.RunConfig(
+            model_dir=os.path.join(hparams['output_dir'], '{}-{}'.format(str(hparams['job_id']), str(i+1))),
+            tf_random_seed=None,
+            save_summary_steps=100,
+            save_checkpoints_steps=1000,
+            save_checkpoints_secs=None,
+            session_config=session_config,
+            keep_checkpoint_max=0, # == save all
+            keep_checkpoint_every_n_hours=10000,
+            log_step_count_steps=100
+            #train_distribute=None
+        )
+
+        classifier = build_estimator(
+            run_config=config,
+            hparams=tf.contrib.training.HParams(**hparams)
+        )
+
+        # start training and evaluation loop with estimator
+        tf.estimator.train_and_evaluate(
+            classifier,
+            tf.estimator.TrainSpec(input_fn=get_input_fn(mode=tf.estimator.ModeKeys.TRAIN), max_steps=hparams['train_steps']),
+            tf.estimator.EvalSpec(input_fn=get_input_fn(mode=tf.estimator.ModeKeys.EVAL), steps=None)
+        )
+
+        # compute final test performance
+        classifier.evaluate(input_fn=get_input_fn(mode='test'), name='test')
+
+        tf.logging.info('Finished iteration {} of {}.'.format((i+1), hparams['repeats']))
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-i', '--data-dir',
+        type=str,
+        required=True,
+        help='The directory where the input data is stored.',
+        dest='data_dir')
+    parser.add_argument(
+        '-o', '--output-dir',
+        type=str,
+        required=True,
+        help='The directory where the output will be stored.',
+        dest='output_dir')
+    parser.add_argument(
+        '-j', '--job-id',
+        type=int,
+        required=True,
+        help='The id this job was assigned during submission, alternatively any unique number distinguish runs.',
+        dest='job_id')
+    parser.add_argument(
+        '-a', '--array-job',
+        type=int,
+        default=1,
+        help='Number of scheduled repeats this job should run for.',
+        dest='repeats')
+    parser.add_argument(
+        '-d', '--logit-dimensions',
+        type=int,
+        required=True,
+        help='Dimension of network logits',
+        dest='logit_dims')
+    parser.add_argument(
+        '-n', '--num-gpus',
+        type=int,
+        default=1,
+        help='The number of gpus used. Uses only CPU if set to 0.',
+        dest='num_gpus')
+    parser.add_argument(
+        '-c', '--num-cpu-cores',
+        type=int,
+        default=1,
+        help='The number of cpu cores available for data preparation.',
+        dest='num_cores')
+    parser.add_argument(
+        '-s', '--train-steps',
+        type=int,
+        default=100,
+        help='The number of steps to use for training.',
+        dest='train_steps')
+    parser.add_argument(
+        '-b', '--batch-size',
+        type=int,
+        default=128,
+        help='Batch size.',
+        dest='batch_size')
+    parser.add_argument(
+        '-l', '--learning-rate',
+        type=float,
+        default=5e-4,
+        help="""\
+        This is the inital learning rate value. The learning rate will decrease
+        during training. For more details check the model_fn implementation in
+        this file.""",
+        dest='learning_rate')
+    parser.add_argument(
+        '-p', '--preprocess-data',
+        type=bool,
+        default=False,
+        help='Whether or not the input data for training should be preprocessed',
+        dest='preprocess_data')
+    parser.add_argument(
+        '-z', '--preprocess-zoom-factor',
+        type=float,
+        default=1.25,
+        help='Zoom factor for pad and crop performed during preprocessing.',
+        dest='preprocess_zoom'
+    )
+    args = parser.parse_args()
+
+    main(**vars(args))
