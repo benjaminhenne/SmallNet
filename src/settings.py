@@ -7,7 +7,6 @@ class Settings:
     """Contains several model-global settings and hyperparameters for model tuning."""
     def __init__(self):
         # hyperparameters
-        self.logit_dim = 10
         self.l1_regularize = True
         self.l1_scale = 0.1
         self.l2_regularize = False
