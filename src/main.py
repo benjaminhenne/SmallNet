@@ -47,11 +47,11 @@ def get_input_fn(mode=None, params=None):
         """Loads the dataset, decodes, reshapes and preprocesses it for use. Computations performed on CPU."""
         with tf.device('/cpu:0'):
             if mode == 'train':
-                dataset = DataHandler(mode, "train.tfrecords", params).prepare_for_train()
+                dataset = DataHandler(mode, "train*.tfre*", params).prepare_for_train()
             elif mode == 'eval':
-                dataset = DataHandler(mode, "eval.tfrecords", params).prepare_for_eval(params.batch_size)
+                dataset = DataHandler(mode, "eval*.tfre*", params).prepare_for_eval(params.batch_size)
             elif mode == 'test':
-                dataset = DataHandler(mode, "test.tfrecords", params).prepare_for_eval(params.batch_size)
+                dataset = DataHandler(mode, "test*.tfre*", params).prepare_for_eval(params.batch_size)
             else:
                 raise ValueError('_input_fn received invalid MODE')
             return dataset.make_one_shot_iterator().get_next()
@@ -87,7 +87,7 @@ def main(**hparams):
             save_checkpoints_steps=1000,
             save_checkpoints_secs=None,
             session_config=session_config,
-            keep_checkpoint_max=0, # == save all
+            keep_checkpoint_max=int(hparams['train_steps']/1000)+1,
             keep_checkpoint_every_n_hours=10000,
             log_step_count_steps=100
             #train_distribute=None
