@@ -182,6 +182,12 @@ if __name__ == '__main__':
         this file.""",
         dest='learning_rate')
     parser.add_argument(
+        '-g', '--summarise-gradients',
+        type=bool,
+        default=False,
+        help="Whether or not to summarise layer weight gradients.",
+        dest='sum_grads')
+    parser.add_argument(
         '-p', '--preprocess-data',
         type=bool,
         default=False,

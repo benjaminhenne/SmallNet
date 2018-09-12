@@ -61,11 +61,30 @@ class Smallnet(object):
 				self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
 			else:
 				self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate)
-
 			self.minimize = self.optimizer.minimize(self.loss)
-			varlist = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)]
-			self.gradients = self.optimizer.compute_gradients(self.loss, var_list=varlist)
-			#self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=self.global_step)
+			
+			if self.hparams.sum_grads:
+				# filter out all layer weights (conv0X/layer_weights, dense0X/layer_weights)
+				layer_weights = []
+				for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES):
+					for l in layer_names:
+						if l in var.name and '/layer_weights' in var.name:
+							layer_weights.append(var)
+				# list of all trainable variables minus layer weights
+				varlist = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) if var not in layer_weights]
+				# calculate gradients for layer weights first
+				layer_grads = self.optimizer.compute_gradients(self.loss, var_list=layer_weights)
+				# apply summaries to layer gradients
+				for g, v in layer_grads:
+					self.add_summaries(arg=g, label='{}_GRAD'.format(v.name.split(":")[0]))
+				# calculate all other gradients and merge the two lists
+				rest_grads = self.optimizer.compute_gradients(self.loss, var_list=varlist)
+				self.gradients = layer_grads + rest_grads
+			else:
+				# collect all trainable variables and calculate gradients over all of them
+				varlist = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)]
+				self.gradients = self.optimizer.compute_gradients(self.loss, var_list=varlist)
+				self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=self.global_step)
 			self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=tf.train.get_global_step())
 
 		sums = 		[s for s in tf.get_collection(tf.GraphKeys.SUMMARIES) if 'validation' not in s.name]
@@ -75,12 +94,13 @@ class Smallnet(object):
 
 
 	# adds a range of summaries to a node
-	def add_summaries(self, arg, label):
+	def add_summaries(self, arg, label, draw_histogram=False):
 		with tf.name_scope(label):
 			mean = tf.reduce_mean(arg)
 			stddev = tf.sqrt(tf.reduce_mean(tf.square(arg - mean)))
 			tf.summary.scalar('mean', mean)
-			tf.summary.histogram('histogram', arg)
+			if draw_histogram:
+				tf.summary.histogram('histogram', arg)
 			if self.settings.verbose_summaries:
 				tf.summary.scalar('stddev', stddev)
 				tf.summary.scalar('max', tf.reduce_max(arg))
@@ -162,8 +182,8 @@ class Smallnet(object):
 			with tf.variable_scope(self.settings.activations[i].__name__):
 				# get layer dimensions as list so they can be fed into the init_w lambda functions
 				dims = layer.get_shape().as_list()
-				# TODO correct shapes for weights; do we even need biases?; optimal init values?
-				weights = tf.get_variable('activation_weights', shape=[], initializer=tf.truncated_normal_initializer(
+				# TODO correct shapes for weights?; do we even need biases?; optimal init values?
+				weights = tf.get_variable('activation_weights', shape=[], initializer=tf.random_normal_initializer(
 					stddev=self.settings.act_inits[i](dims)))
 				self.add_summaries(weights, 'activation_weights')
 				# swish and identity don't want to behave like API activation functions, so they get special treatment
