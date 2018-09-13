@@ -69,7 +69,7 @@ def main(**hparams):
     # Start tensorflow logging
     tf.logging.set_verbosity(tf.logging.INFO)
 
-    tf.logging.info('Using arguments: {}'.format(str(hparams)))
+    tf.logging.info('Using arguments: {}\n'.format(str(hparams)))
 
     session_config = tf.ConfigProto(
         allow_soft_placement=True,
@@ -80,7 +80,7 @@ def main(**hparams):
 
     # for-loop for batch jobs
     for i in range(hparams['repeats']):
-        tf.logging.info('\n\nCommencing iteration {} of {}.'.format((i+1), hparams['repeats']))
+        tf.logging.info('Commencing iteration {} of {}.'.format((i+1), hparams['repeats']))
 
         config = tf.estimator.RunConfig(
             model_dir=os.path.join(hparams['output_dir'], '{}-{}'.format(str(hparams['job_id']), str(i+1))),
@@ -110,7 +110,7 @@ def main(**hparams):
         # compute final test performance
         classifier.evaluate(input_fn=get_input_fn(mode='test'), name='test')
 
-        tf.logging.info('Finished iteration {} of {}.'.format((i+1), hparams['repeats']))
+        tf.logging.info('Finished iteration {} of {}.\n'.format((i+1), hparams['repeats']))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
