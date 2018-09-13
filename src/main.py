@@ -69,6 +69,8 @@ def main(**hparams):
     # Start tensorflow logging
     tf.logging.set_verbosity(tf.logging.INFO)
 
+    tf.logging.info('Using arguments: {}'.format(str(hparams)))
+
     session_config = tf.ConfigProto(
         allow_soft_placement=True,
         log_device_placement=False,
@@ -78,7 +80,7 @@ def main(**hparams):
 
     # for-loop for batch jobs
     for i in range(hparams['repeats']):
-        tf.logging.info('Commencing iteration {} of {}.'.format((i+1), hparams['repeats']))
+        tf.logging.info('\n\nCommencing iteration {} of {}.'.format((i+1), hparams['repeats']))
 
         config = tf.estimator.RunConfig(
             model_dir=os.path.join(hparams['output_dir'], '{}-{}'.format(str(hparams['job_id']), str(i+1))),
