@@ -51,8 +51,7 @@ class Smallnet(object):
 			self.accuracy = tf.equal(tf.argmax(tf.nn.softmax(self.logits), 1), self.labels)
 			self.accuracy = tf.reduce_mean(tf.cast(self.accuracy, tf.float32))
 
-			self.add_summaries(self.accuracy, 'accuracy')
-			self.add_summaries(self.accuracy, 'validation_accuracy')
+			self.add_summaries(self.accuracy, 'train_accuracy')
 			self.add_summaries(self.loss, 'loss')
 			self.add_summaries(self.xentropy, 'cross_entropy')
 
@@ -87,10 +86,7 @@ class Smallnet(object):
 				self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=self.global_step)
 			self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=tf.train.get_global_step())
 
-		sums = 		[s for s in tf.get_collection(tf.GraphKeys.SUMMARIES) if 'validation' not in s.name]
-		val_sums =	[s for s in tf.get_collection(tf.GraphKeys.SUMMARIES) if 'validation' in s.name]
-		self.summaries = 			tf.summary.merge(sums)
-		self.validation_summaries = tf.summary.merge(val_sums)
+		self.summaries = tf.summary.merge_all()
 
 
 	# adds a range of summaries to a node
