@@ -5,6 +5,7 @@ import tensorflow as tf
 
 from settings import Settings
 from DataHandler import DataHandler
+from util import str2bool
 import smallnet_architecture as net
 
 def get_model_fn():
@@ -70,7 +71,7 @@ def main(**hparams):
     tf.logging.set_verbosity(tf.logging.INFO)
 
     tf.logging.info('Using arguments: {}\n'.format(str(hparams)))
-
+    
     session_config = tf.ConfigProto(
         allow_soft_placement=True,
         log_device_placement=False,
@@ -185,20 +186,20 @@ if __name__ == '__main__':
         dest='learning_rate')
     parser.add_argument(
         '-g', '--summarise-gradients',
-        type=bool,
+        type=str2bool,
         default=False,
         help="Whether or not to summarise layer weight gradients.",
         dest='sum_grads')
     parser.add_argument(
         '-p', '--preprocess-data',
-        type=bool,
+        type=str2bool,
         default=False,
         help='Whether or not the input data for training should be preprocessed',
         dest='preprocess_data')
     parser.add_argument(
         '-z', '--preprocess-zoom-factor',
         type=float,
-        default=1.25,
+        default=1.20,
         help='Zoom factor for pad and crop performed during preprocessing.',
         dest='preprocess_zoom'
     )
