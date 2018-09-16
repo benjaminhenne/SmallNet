@@ -71,7 +71,7 @@ def main(**hparams):
     tf.logging.set_verbosity(tf.logging.INFO)
 
     tf.logging.info('Using arguments: {}\n'.format(str(hparams)))
-    
+
     session_config = tf.ConfigProto(
         allow_soft_placement=True,
         log_device_placement=False,
@@ -105,7 +105,7 @@ def main(**hparams):
         tf.estimator.train_and_evaluate(
             classifier,
             tf.estimator.TrainSpec(input_fn=get_input_fn(mode=tf.estimator.ModeKeys.TRAIN), max_steps=hparams['train_steps']),
-            tf.estimator.EvalSpec(input_fn=get_input_fn(mode=tf.estimator.ModeKeys.EVAL), steps=None)
+            tf.estimator.EvalSpec(input_fn=get_input_fn(mode=tf.estimator.ModeKeys.EVAL), throttle_secs=1, steps=None)
         )
 
         # compute final test performance
