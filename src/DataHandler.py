@@ -36,7 +36,11 @@ def get_parse_fn(mode, params):
         # reshape data into desired shape
         height, width, depth = info['hwd']
         image.set_shape([height * width * depth])
-        image = tf.reshape(image, [height, width, depth])
+
+        if info['resize_before_use']:
+            image = tf.image.resize_image_with_crop_or_pad(image, height, width)
+        else:
+            image = tf.reshape(image, [height, width, depth])
         label = parsed[info['labels']]
 
         # perform preprocessing if enabled
@@ -52,8 +56,11 @@ def get_parse_fn(mode, params):
 class DataHandler():
     """Class to provide datasets from serialised .tfrecords-files."""
     def __init__(self, mode, file_pattern, params, parse_fn=get_parse_fn):
-        files = tf.data.Dataset.list_files(os.path.join(params.data_dir, file_pattern))
-        self.dataset = files.interleave(tf.data.TFRecordDataset, 1) # cycle_length = num files
+        with open(os.path.join(params.data_dir, 'content.pickle'), 'rb') as handle:
+            info = pickle.load(handle)
+
+        files = tf.data.Dataset.list_files(os.path.join(params.data_dir, info['file_pattern'][file_pattern]))
+        self.dataset = files.interleave(tf.data.TFRecordDataset, cycle_length=1) # cycle_length = num files
         self.params = params
         self.parse_fn = parse_fn
         self.mode = mode
@@ -67,15 +74,18 @@ class DataHandler():
             drop_remainder=True))
         self.dataset = self.dataset.apply(tf.contrib.data.shuffle_and_repeat(
             buffer_size=self.params.batch_size,
-            count=None))
+            count=None)) # repeat forever, assumes estimator stops after max_steps
         self.dataset = self.dataset.prefetch(buffer_size=1)
         return self.dataset
 
-    def prepare_for_eval(self, eval_batch_size):
+    def prepare_for_eval(self, eval_batch_size=-1):
         """Performs mapping on dataset, forms batches, no shuffling or repeating, no prefetching."""
+        with open(os.path.join(self.params.data_dir, 'content.pickle'), 'rb') as handle:
+            info = pickle.load(handle)
+        
         self.dataset = self.dataset.apply(tf.contrib.data.map_and_batch(
             map_func=self.parse_fn(self.mode, self.params),
-            batch_size=eval_batch_size,
+            batch_size=(info['eval_batch_size'] if eval_batch_size == -1 else eval_batch_size),
             num_parallel_batches=self.params.num_cores,
             drop_remainder=True))
         return self.dataset

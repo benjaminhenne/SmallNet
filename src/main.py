@@ -48,11 +48,11 @@ def get_input_fn(mode=None, params=None):
         """Loads the dataset, decodes, reshapes and preprocesses it for use. Computations performed on CPU."""
         with tf.device('/cpu:0'):
             if mode == 'train':
-                dataset = DataHandler(mode, "train*.tfre*", params).prepare_for_train()
+                dataset = DataHandler(mode, "train", params).prepare_for_train()
             elif mode == 'eval':
-                dataset = DataHandler(mode, "eval*.tfre*", params).prepare_for_eval(params.eval_batch_size)
+                dataset = DataHandler(mode, "validation", params).prepare_for_eval(params.eval_batch_size)
             elif mode == 'test':
-                dataset = DataHandler(mode, "test*.tfre*", params).prepare_for_eval(params.eval_batch_size)
+                dataset = DataHandler(mode, "test", params).prepare_for_eval(params.eval_batch_size)
             else:
                 raise ValueError('_input_fn received invalid MODE')
             return dataset.make_one_shot_iterator().get_next()
@@ -109,7 +109,8 @@ def main(**hparams):
         )
 
         # compute final test performance
-        classifier.evaluate(input_fn=get_input_fn(mode='test'), name='test')
+        if hparams['perform_test']:
+            classifier.evaluate(input_fn=get_input_fn(mode='test'), name='test')
 
         tf.logging.info('Finished iteration {} of {}.\n'.format((i+1), hparams['repeats']))
 
@@ -172,8 +173,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '-e', '--eval-batch-size',
         type=int,
-        default=128,
-        help="Evaluation batch size",
+        default=-1,
+        help="Evaluation batch size. Defaults to -1, will then use dataset's full evaluation set in one batch",
         dest="eval_batch_size")
     parser.add_argument(
         '-l', '--learning-rate',
@@ -184,6 +185,12 @@ if __name__ == '__main__':
         during training. For more details check the model_fn implementation in
         this file.""",
         dest='learning_rate')
+    parser.add_argument(
+        '-t', '--perform-test',
+        type=str2bool,
+        default=False,
+        help="Whether or not to evaluate test performance after max_steps is reached",
+        dest='perform_test')
     parser.add_argument(
         '-g', '--summarise-gradients',
         type=str2bool,
