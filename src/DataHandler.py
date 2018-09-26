@@ -37,10 +37,9 @@ def get_parse_fn(mode, params):
         height, width, depth = info['hwd']
         image.set_shape([height * width * depth])
 
+        image = tf.reshape(image, [height, width, depth])
         if info['resize_before_use']:
             image = tf.image.resize_image_with_crop_or_pad(image, height, width)
-        else:
-            image = tf.reshape(image, [height, width, depth])
         label = parsed[info['labels']]
 
         # perform preprocessing if enabled
