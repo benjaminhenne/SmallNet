@@ -1,4 +1,3 @@
-import cifar10_loader as loader
 from activations import *
 import tensorflow as tf
 
