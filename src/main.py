@@ -30,14 +30,14 @@ def get_model_fn():
 
         # training EstimatorSpec
         if mode == tf.estimator.ModeKeys.TRAIN:
-            return tf.estimator.EstimatorSpec(mode, loss=network.xentropy, train_op=network.update)
+            return tf.estimator.EstimatorSpec(mode, loss=network.loss, train_op=network.update)
 
         # evaluation EstimatorSpec
         eval_metric_ops = {
             'accuracy': tf.metrics.accuracy(
                 labels=labels, predictions=predicted_classes)
         }
-        return tf.estimator.EstimatorSpec(mode, loss=network.xentropy, eval_metric_ops=eval_metric_ops)
+        return tf.estimator.EstimatorSpec(mode, loss=network.loss, eval_metric_ops=eval_metric_ops)
 
     return _small_net_model_fn
 
