@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 class Smallnet(object):
-	def __init__(self, settings, features, labels, hparams):
+	def __init__(self, settings, features, labels, hparams, is_training=False):
 		self.settings = settings
 		self.hparams = hparams
 		# inputs
@@ -12,6 +12,7 @@ class Smallnet(object):
 			self.inputs = features
 			self.labels = labels
 			self.learning_rate = hparams.learning_rate
+			self.is_training = is_training
 			self.global_step = tf.Variable(0, trainable=False, name='global_step')
 
 		if self.settings.network_layout == 'default':
@@ -112,21 +113,23 @@ class Smallnet(object):
 			raise Exception('Specified network type not yet implemented!')
 
 	def build_default_network(self, name_scope='None'):
+		# set dropout_rate to 1 when not training
+		dropout_rate = self.settings.dropout_rate if self.is_training else 1.0
 		# conv1
 		state	= self.conv2d_multiple_act(layer_input=self.inputs, weights_shape=[5,5,3,64], scope_name='conv01')
-		state 	= tf.nn.dropout(state, keep_prob=self.settings.dropout_rate, name='dropout01')
+		state 	= tf.nn.dropout(state, keep_prob=dropout_rate, name='dropout01')
 		state 	= self.conv2d_multiple_act(layer_input=state, weights_shape=[3,3,64,64], scope_name='conv02')
 		# pooling 1
 		state	= tf.nn.max_pool(state, ksize=[1,3,3,1], strides=[1,2,2,1], padding='SAME', name='max_pool01')
 		# conv2
 		state	= self.conv2d_multiple_act(layer_input=state, weights_shape=[1,1,64,64], scope_name='conv03')
-		state	= tf.nn.dropout(state, keep_prob=self.settings.dropout_rate, name='dropout02')
+		state	= tf.nn.dropout(state, keep_prob=dropout_rate, name='dropout02')
 		state	= self.conv2d_multiple_act(layer_input=state, weights_shape=[5,5,64,64], scope_name='conv04')
 		# pooling 2
 		state	= tf.nn.max_pool(state, ksize=[1,3,3,1], strides=[1,2,2,1], padding='SAME', name='max_pool02')
 		# dense layer 1
 		state	= self.dense_multiple_act(state, weights_shape=[384], bias_shape=[-1], bias_init=0.1, scope_name='dense01')
-		state	= tf.nn.dropout(state, keep_prob=self.settings.dropout_rate, name='dropout03')
+		state	= tf.nn.dropout(state, keep_prob=dropout_rate, name='dropout03')
 		state 	= self.dense_multiple_act(state, weights_shape=[192], bias_shape=[-1], bias_init=0.1, scope_name='dense02')
 		# output layer
 		logits = self.dense_multiple_act(state, weights_shape=[self.hparams.logit_dims], bias_shape=[-1], bias_init=0.1, logits=True, scope_name='output01')
@@ -178,7 +181,7 @@ class Smallnet(object):
 			with tf.variable_scope(self.settings.activations[i].__name__):
 				# get layer dimensions as list so they can be fed into the init_w lambda functions
 				dims = layer.get_shape().as_list()
-				# TODO correct shapes for weights?; do we even need biases?; optimal init values?
+				# TODO correct shapes for weights?; optimal init values?
 				weights = tf.get_variable('activation_weights', shape=[], initializer=tf.random_normal_initializer(
 					stddev=self.settings.act_inits[i](dims)))
 				self.add_summaries(weights, 'activation_weights')

@@ -16,7 +16,7 @@ def get_model_fn():
         
         # individual model set-up
         settings = Settings()
-        network = net.Smallnet(settings, features, labels, params)
+        network = net.Smallnet(settings, features, labels, params, (mode == tf.estimator.ModeKeys.TRAIN))
         logits = network.logits
 
         # prediction EstimatorSpec
