@@ -35,7 +35,7 @@ imagenet_dict = {
         'validation': 'validation/validation-*',
         'test': None
     },
-    'format': {
+    'format_large': {
         'image/height':             tf.FixedLenFeature((), tf.int64, -1),
         'image/width':              tf.FixedLenFeature((), tf.int64, -1),
         'image/colorspace':         tf.FixedLenFeature((), tf.string, ""),
@@ -52,7 +52,7 @@ imagenet_dict = {
         'image/filename':           tf.FixedLenFeature((), tf.string, ""),
         'image/encoded':            tf.FixedLenFeature((), tf.string, ""),
     },
-    'format_small': {
+    'format': {
         'image/height':             tf.FixedLenFeature((), tf.int64, -1),
         'image/width':              tf.FixedLenFeature((), tf.int64, -1),
         'image/channels':           tf.FixedLenFeature((), tf.int64, -1),
