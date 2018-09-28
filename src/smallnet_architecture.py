@@ -182,8 +182,8 @@ class Smallnet(object):
 				# get layer dimensions as list so they can be fed into the init_w lambda functions
 				dims = layer.get_shape().as_list()
 				# TODO correct shapes for weights?; optimal init values?
-				weights = tf.get_variable('activation_weights', shape=[], initializer=tf.random_normal_initializer(
-					stddev=self.settings.act_inits[i](dims)))
+				weights = tf.get_variable('activation_weights', initializer=tf.constant(1/5))
+				# shape=[], tf.random_normal_initializer(stddev=self.settings.act_inits[i](dims)))
 				self.add_summaries(weights, 'activation_weights')
 				# swish and identity don't want to behave like API activation functions, so they get special treatment
 				if self.settings.activations[i].__name__ == 'swish':
