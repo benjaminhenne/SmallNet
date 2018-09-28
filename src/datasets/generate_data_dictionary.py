@@ -51,6 +51,15 @@ imagenet_dict = {
         'image/format':             tf.FixedLenFeature((), tf.string, ""),
         'image/filename':           tf.FixedLenFeature((), tf.string, ""),
         'image/encoded':            tf.FixedLenFeature((), tf.string, ""),
+    },
+    'format_small': {
+        'image/height':             tf.FixedLenFeature((), tf.int64, -1),
+        'image/width':              tf.FixedLenFeature((), tf.int64, -1),
+        'image/channels':           tf.FixedLenFeature((), tf.int64, -1),
+        'image/class/label':        tf.FixedLenFeature((), tf.int64, -1),
+        'image/class/synset':       tf.FixedLenFeature((), tf.string, ""),
+        'image/class/text':         tf.FixedLenFeature((), tf.string, ""),
+        'image/encoded':            tf.FixedLenFeature((), tf.string, ""),
     }
 }
 
