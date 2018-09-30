@@ -44,7 +44,6 @@ def get_parse_fn(mode, params):
             width  = parsed['image/width']
             depth  = parsed['image/channels']
             # set image to actual shape first
-            # image.set_shape([height * width * depth])
             image = tf.reshape(image, tf.stack([height, width, depth]))
             # find target shape next, resize into that with cropping or 0-padding
             height, width, depth = info['hwd']
