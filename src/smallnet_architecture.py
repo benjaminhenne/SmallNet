@@ -84,7 +84,6 @@ class Smallnet(object):
 				# collect all trainable variables and calculate gradients over all of them
 				varlist = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)]
 				self.gradients = self.optimizer.compute_gradients(self.loss, var_list=varlist)
-				self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=self.global_step)
 			self.update = self.optimizer.apply_gradients(grads_and_vars=self.gradients, global_step=tf.train.get_global_step())
 
 		self.summaries = tf.summary.merge_all()
