@@ -101,10 +101,21 @@ def main(**hparams):
             hparams=tf.contrib.training.HParams(**hparams)
         )
 
+        # early stopping
+        hooks = []
+        if hparams['early_stopping']:
+            early_stopping = tf.contrib.estimator.stop_if_no_increase_hook(
+                classifier,
+                metric_name='accuracy',
+                max_steps_without_decrease=100000,
+                min_steps=50000,
+                run_every_steps=1000)
+            hooks = [early_stopping]
+
         # start training and evaluation loop with estimator
         tf.estimator.train_and_evaluate(
             classifier,
-            tf.estimator.TrainSpec(input_fn=get_input_fn(mode=tf.estimator.ModeKeys.TRAIN), max_steps=hparams['train_steps']),
+            tf.estimator.TrainSpec(input_fn=get_input_fn(mode=tf.estimator.ModeKeys.TRAIN), max_steps=hparams['train_steps'], hooks=hooks),
             tf.estimator.EvalSpec(input_fn=get_input_fn(mode=tf.estimator.ModeKeys.EVAL), throttle_secs=1, steps=None)
         )
 
@@ -208,8 +219,13 @@ if __name__ == '__main__':
         type=float,
         default=1.20,
         help='Zoom factor for pad and crop performed during preprocessing.',
-        dest='preprocess_zoom'
-    )
+        dest='preprocess_zoom')
+    parser.add_argument(
+        '-x', '--early-stopping',
+        type=str2bool,
+        default=False,
+        help='Whether or not to execute early stopping.',
+        dest='early_stopping')
     args = parser.parse_args()
 
     main(**vars(args))
