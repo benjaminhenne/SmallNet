@@ -107,7 +107,7 @@ def main(**hparams):
             early_stopping = tf.contrib.estimator.stop_if_no_increase_hook(
                 classifier,
                 metric_name='accuracy',
-                max_steps_without_decrease=100000,
+                max_steps_without_increase=100000,
                 min_steps=50000,
                 run_every_steps=1000)
             hooks = [early_stopping]

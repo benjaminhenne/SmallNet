@@ -28,8 +28,8 @@ imagenet_dict = {
     'data': 'image/encoded',
     'labels': 'image/class/label',
     'resize_before_use': True,
-    'hwd': [480, 480, 3],
-    'eval_batch_size': 10000,
+    'hwd': [128, 128, 3],
+    'eval_batch_size': 1250,
     'file_pattern': {
         'train': 'train/train-*',
         'validation': 'validation/validation-*',
@@ -64,4 +64,4 @@ imagenet_dict = {
 }
 
 with open('content.pickle', 'wb') as handle:
-    pickle.dump(cifar_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    pickle.dump(imagenet_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)

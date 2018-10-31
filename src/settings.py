@@ -7,7 +7,7 @@ class Settings:
     def __init__(self):
         # hyperparameters
         self.l1_regularize = True
-        self.l1_scale = 0.05
+        self.l1_scale = 0.005
         self.l2_regularize = False
         self.l2_lambda = 0.001
         self.dropout_rate = 0.5
